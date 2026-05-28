@@ -9,7 +9,7 @@ public class Collatz {
             return n / 2;
         }
         return 3 * n + 1;
-    }
+    } 
 
     public static void main(String[] args) {
         int n = 5;
