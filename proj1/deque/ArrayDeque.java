@@ -1,5 +1,7 @@
 package deque;
 
+import java.util.Iterator;
+
 public class ArrayDeque<T> implements Deque<T> {
     private int size;
     private int nextFirst;
@@ -168,4 +170,26 @@ public class ArrayDeque<T> implements Deque<T> {
         return i + 1;
     }
 
+    public Iterator<T> iterator() {
+        return new ArraySetIterator();
+    }
+
+    private class ArraySetIterator implements Iterator<T> {
+        private int Pos;
+        public ArraySetIterator() {
+            Pos = 0;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return Pos < size();
+        }
+
+        @Override
+        public T next() {
+            T returnT = get(Pos);
+            Pos += 1;
+            return returnT;
+        }
+    }
 }
