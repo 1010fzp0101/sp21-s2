@@ -1,6 +1,6 @@
 package deque;
 
-public class ArrayDeque<T> {
+public class ArrayDeque<T> implements Deque<T> {
     private int size;
     private int nextFirst;
     private int nextLast;
@@ -44,6 +44,7 @@ public class ArrayDeque<T> {
         }
     }
 
+    @Override
     public void addFirst(T item) {
         if (size == arr.length) {
             resize(size * 2);
@@ -54,6 +55,7 @@ public class ArrayDeque<T> {
         size += 1;
     }
 
+    @Override
     public void addLast(T item) {
         if (size == arr.length) {
             resize(size * 2);
@@ -66,23 +68,19 @@ public class ArrayDeque<T> {
         size += 1;
     }
 
+    @Override
     public int size() {
         return size;
     }
 
 
-    public boolean isEmpty() {
-        if (size == 0) {
-            return true;
-        }
-        return false;
-    }
 
-
+    @Override
     public T get(int index) {
         return arr[(front + index) % arr.length];
     }
 
+    @Override
     public void printDeque() {
         for (int i = 0; i < size; ++i) {
             System.out.print(get(i) + " ");
@@ -90,6 +88,7 @@ public class ArrayDeque<T> {
         System.out.println();
     }
 
+    @Override
     public T removeFirst() {
         if (arr.length >= 16) {
             if ((float)(size - 1) / arr.length < 0.25) {
@@ -116,6 +115,7 @@ public class ArrayDeque<T> {
         }
     }
 
+    @Override
     public T removeLast() {
         if (arr.length >= 16) {
             if ((float)(size - 1) / arr.length < 0.25) {

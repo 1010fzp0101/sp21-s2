@@ -1,6 +1,6 @@
 package deque;
 
-public class LinkedListDeque<T> {
+public class LinkedListDeque<T> implements Deque<T> {
     private class Deque {
         public T elem;
         public Deque prev;
@@ -21,12 +21,14 @@ public class LinkedListDeque<T> {
     }
 
     /*Return the number of items in the deque.*/
+    @Override
     public int size() {
         return size;
     }
 
 
     /*Add an item of type T to the front of the deque.*/
+    @Override
     public void addFirst(T item) {
         Deque m = new Deque(item, null, null);
         if (size() == 0) {
@@ -43,14 +45,9 @@ public class LinkedListDeque<T> {
         size += 1;
     }
 
-    public boolean isEmpty() {
-        if (size != 0) {
-            return false;
-        }
-        return true;
-    }
 
     /*print the Deque*/
+    @Override
     public void printDeque() {
         Deque tmp;
         tmp = sentinel.next;
@@ -64,6 +61,7 @@ public class LinkedListDeque<T> {
     }
 
     /*Add an item of type T to the back of the deque.*/
+    @Override
     public void addLast(T item) {
         Deque m = new Deque(item, null, null);
         if (size() == 0) {
@@ -80,6 +78,7 @@ public class LinkedListDeque<T> {
     }
 
     /*remove and return the first item of the Deque*/
+    @Override
     public T removeFirst(){
         if (size == 0) {
             return null;
@@ -95,6 +94,7 @@ public class LinkedListDeque<T> {
     }
 
     /*remove and return the last value of the Deque.*/
+    @Override
     public T removeLast() {
         if (size == 0) {
             return null;
@@ -111,6 +111,7 @@ public class LinkedListDeque<T> {
     /*get the item at the given index, where 0 is the front, and 1 is the next,
     *and so forth.
     */
+    @Override
     public T get(int index)  {
         if (index < 0 || index >= size) {
             return null;
@@ -157,7 +158,7 @@ public class LinkedListDeque<T> {
     }
 
 
-    /*Returns whether or not the object o is the same object of Deque. o
+    /*Returns whether the object o is the same object of Deque. o
     *is considered equal if it is a Deque and if it contains the same contents
     * in the same order.
      */
