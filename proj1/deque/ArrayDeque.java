@@ -11,37 +11,38 @@ public class ArrayDeque<T> implements Deque<T> {
 
     public ArrayDeque() {
         size = 0;
-        arr = (T[])new Object[8];
+        arr = (T[]) new Object[8];
         nextFirst = 4;
         nextLast = 5;
         front = nextLast;
     }
 
-    private void resize (int capacity) {
+    private void resize(int capacity) {
         if (capacity > arr.length) {
             T[] a = (T[]) new Object[capacity];
             System.arraycopy(arr, 0, a, 0, nextLast);
             System.arraycopy(arr, nextLast, a, capacity - size + nextLast, size - nextLast);
             arr = a;
             nextFirst = arr.length - (size - nextFirst);
-            front = IncreaseIndex(nextFirst);
-        }
-        else if (capacity < arr.length) {
+            front = increaseIndex(nextFirst);
+        } else if (capacity < arr.length) {
             if (nextFirst >= 1 + nextLast) {
                 T[] a = (T[]) new Object[capacity];
                 System.arraycopy(arr, 0, a, 0, nextLast + 1);
-                System.arraycopy(arr, nextFirst + 1, a, a.length - (arr.length - nextFirst) + 1, arr.length - nextFirst - 1);
+                System.arraycopy(arr, nextFirst + 1,
+                                 a, a.length - (arr.length - nextFirst) + 1,
+                           arr.length - nextFirst - 1);
                 int m = arr.length;
                 arr = a;
                 nextFirst = arr.length - (m - nextFirst);
-                front = IncreaseIndex(nextFirst);
+                front = increaseIndex(nextFirst);
             } else {
                 T[] a = (T[]) new Object[capacity];
                 System.arraycopy(arr, nextFirst + 1, a, 0, nextLast - nextFirst - 1);
                 arr = a;
                 nextLast = nextLast - nextFirst - 1;
                 nextFirst = capacity - 1;
-                front = IncreaseIndex(nextFirst);
+                front = increaseIndex(nextFirst);
             }
         }
     }
@@ -53,7 +54,7 @@ public class ArrayDeque<T> implements Deque<T> {
         }
         arr[nextFirst] = item;
         front = nextFirst;
-        nextFirst = DecreaseIndex(nextFirst);
+        nextFirst = decreaseIndex(nextFirst);
         size += 1;
     }
 
@@ -66,7 +67,7 @@ public class ArrayDeque<T> implements Deque<T> {
             front = nextFirst;
         }
         arr[nextLast] = item;
-        nextLast = IncreaseIndex(nextLast);
+        nextLast = increaseIndex(nextLast);
         size += 1;
     }
 
@@ -93,14 +94,14 @@ public class ArrayDeque<T> implements Deque<T> {
     @Override
     public T removeFirst() {
         if (arr.length >= 16) {
-            if ((float)(size - 1) / arr.length < 0.25) {
+            if ((float) (size - 1) / arr.length < 0.25) {
                 resize(arr.length / 2);
             }
-            front = IncreaseIndex(nextFirst);
+            front = increaseIndex(nextFirst);
             T elmt = arr[front];
             arr[front] = null;
             nextFirst = front;
-            front = IncreaseIndex(nextFirst);
+            front = increaseIndex(nextFirst);
             size -= 1;
             return elmt;
         } else {
@@ -110,7 +111,7 @@ public class ArrayDeque<T> implements Deque<T> {
                 T elmt = arr[front];
                 arr[front] = null;
                 nextFirst = front;
-                front = IncreaseIndex(nextFirst);
+                front = increaseIndex(nextFirst);
                 size -= 1;
                 return elmt;
             }
@@ -120,10 +121,10 @@ public class ArrayDeque<T> implements Deque<T> {
     @Override
     public T removeLast() {
         if (arr.length >= 16) {
-            if ((float)(size - 1) / arr.length < 0.25) {
+            if ((float) (size - 1) / arr.length < 0.25) {
                 resize(arr.length / 2);
             }
-            nextLast = DecreaseIndex(nextLast);
+            nextLast = decreaseIndex(nextLast);
             T elmt = arr[nextLast];
             arr[nextLast] = null;
             size -= 1;
@@ -132,7 +133,7 @@ public class ArrayDeque<T> implements Deque<T> {
             if (size == 0) {
                 return null;
             } else {
-                nextLast = DecreaseIndex(nextLast);
+                nextLast = decreaseIndex(nextLast);
                 T elmt = arr[nextLast];
                 arr[nextLast] = null;
                 size -= 1;
@@ -141,29 +142,29 @@ public class ArrayDeque<T> implements Deque<T> {
         }
     }
 
-    public boolean equals (Object o) {
+    public boolean equals(Object o) {
         if (!(o instanceof  ArrayDeque<?>)) {
             return false;
         }
-        if ((( ArrayDeque<?>) o).size() != size()) {
+        if (((ArrayDeque<?>) o).size() != size()) {
             return false;
         }
         for (int i = 0; i < size; ++i) {
-            if (get(i) != (( ArrayDeque<?>) o).get(i))  {
+            if (get(i) != ((ArrayDeque<?>) o).get(i))  {
                 return false;
             }
         }
         return true;
     }
 
-    private int DecreaseIndex(int i) {
+    private int decreaseIndex(int i) {
         if (i == 0) {
             return arr.length - 1;
         }
         return i - 1;
     }
 
-    private int IncreaseIndex(int i ) {
+    private int increaseIndex(int i) {
         if (i == arr.length - 1) {
             return 0;
         }
@@ -175,20 +176,20 @@ public class ArrayDeque<T> implements Deque<T> {
     }
 
     private class ArraySetIterator implements Iterator<T> {
-        private int Pos;
-        public ArraySetIterator() {
-            Pos = 0;
+        private int pos;
+        ArraySetIterator() {
+            pos = 0;
         }
 
         @Override
         public boolean hasNext() {
-            return Pos < size();
+            return pos < size();
         }
 
         @Override
         public T next() {
-            T returnT = get(Pos);
-            Pos += 1;
+            T returnT = get(pos);
+            pos += 1;
             return returnT;
         }
     }

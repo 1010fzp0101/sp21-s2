@@ -4,10 +4,10 @@ import java.util.Iterator;
 
 public class LinkedListDeque<T> implements Deque<T> {
     private class Deque {
-        public T elem;
-        public Deque prev;
-        public Deque next;
-        public Deque(T theitem, Deque p, Deque n) {
+        private T elem;
+        private Deque prev;
+        private Deque next;
+        Deque(T theitem, Deque p, Deque n) {
             elem = theitem;
             prev = p;
             next = n;
@@ -81,7 +81,7 @@ public class LinkedListDeque<T> implements Deque<T> {
 
     /*remove and return the first item of the Deque*/
     @Override
-    public T removeFirst(){
+    public T removeFirst() {
         if (size == 0) {
             return null;
         }
@@ -164,7 +164,7 @@ public class LinkedListDeque<T> implements Deque<T> {
     *is considered equal if it is a Deque and if it contains the same contents
     * in the same order.
      */
-    public boolean equals (Object o) {
+    public boolean equals(Object o) {
         if (!(o instanceof LinkedListDeque<?>)) {
             return false;
         }
@@ -184,20 +184,20 @@ public class LinkedListDeque<T> implements Deque<T> {
     }
 
     private class LinkedListSetIterator implements Iterator<T> {
-        private int Pos;
+        private int _pos;
         public LinkedListSetIterator() {
-            Pos = 0;
+            _pos = 0;
         }
 
         @Override
         public boolean hasNext() {
-            return Pos < size();
+            return _pos < size();
         }
 
         @Override
         public T next() {
-            T returnT = get(Pos);
-            Pos += 1;
+            T returnT = get(_pos);
+            _pos += 1;
             return returnT;
         }
     }
