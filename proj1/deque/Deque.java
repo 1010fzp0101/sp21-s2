@@ -15,4 +15,5 @@ public interface Deque<T> extends Iterable<T> {
     T removeFirst();
     T removeLast();
     T get(int index);
+
 }

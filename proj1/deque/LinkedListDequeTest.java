@@ -58,7 +58,7 @@ public class LinkedListDequeTest {
     /* Tests removing from an empty deque */
     public void removeEmptyTest() {
 
-        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<Integer>();
         lld1.addFirst(3);
 
         lld1.removeLast();
@@ -140,7 +140,7 @@ public class LinkedListDequeTest {
 
     @Test
     public void printDequeTest() {
-        LinkedListDeque<Integer> t = new LinkedListDeque<>();
+        LinkedListDeque<Integer> t = new LinkedListDeque<Integer>();
         t.printDeque();
         t.addLast(1);
         t.printDeque();
@@ -150,7 +150,7 @@ public class LinkedListDequeTest {
 
     @Test
     public void getTest() {
-        LinkedListDeque<Integer> t = new LinkedListDeque<>();
+        LinkedListDeque<Integer> t = new LinkedListDeque<Integer>();
         t.addFirst(1);
         t.addFirst(2);
         t.addFirst(3);
@@ -167,8 +167,8 @@ public class LinkedListDequeTest {
 
     @Test
     public void equalsTest() {
-        LinkedListDeque<Integer> t = new LinkedListDeque<>();
-        LinkedListDeque<Integer> o = new LinkedListDeque<>();
+        LinkedListDeque<Integer> t = new LinkedListDeque<Integer>();
+        LinkedListDeque<Integer> o = new LinkedListDeque<Integer>();
         assertEquals(true, t.equals(o));
         t.addLast(1);
         o.addFirst(2);
@@ -179,7 +179,7 @@ public class LinkedListDequeTest {
     }
  @Test
     public void getRecursiveTest() {
-        LinkedListDeque<Integer> t = new LinkedListDeque<>();
+        LinkedListDeque<Integer> t = new LinkedListDeque<Integer>();
         t.addFirst(1);
         t.addFirst(2);
         t.addFirst(3);

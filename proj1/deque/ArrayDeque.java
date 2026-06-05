@@ -143,14 +143,14 @@ public class ArrayDeque<T> implements Deque<T> {
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof  ArrayDeque<?>)) {
+        if (!(o instanceof Deque<?>)) {
             return false;
         }
-        if (((ArrayDeque<?>) o).size() != size()) {
+        if (((Deque<?>) o).size() != size()) {
             return false;
         }
         for (int i = 0; i < size; ++i) {
-            if (get(i) != ((ArrayDeque<?>) o).get(i))  {
+            if (!get(i).equals(((Deque<?>) o).get(i))){
                 return false;
             }
         }
