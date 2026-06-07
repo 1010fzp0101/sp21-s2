@@ -16,13 +16,13 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     private void resize(int capacity) {
-       T[] a = (T[]) new Object[capacity];
-       for (int i = 0; i < size(); ++i) {
-           a[i] = get(i);
-       }
-       arr = a;
-       nextFirst = capacity - 1;
-       nextLast = size();
+        T[] a = (T[]) new Object[capacity];
+        for (int i = 0; i < size(); ++i) {
+            a[i] = get(i);
+        }
+        arr = a;
+        nextFirst = capacity - 1;
+        nextLast = size();
     }
 
     @Override
