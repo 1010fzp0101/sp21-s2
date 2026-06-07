@@ -1,14 +1,13 @@
 package deque;
 
-import java.util.ArrayDeque;
 import java.util.Iterator;
 
-public class LinkedListDeque<T> implements Deque<T>, Iterable<T>{
-    private class deque<T> {
+public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
+    private class D<T> {
         private T elem;
-        private deque<T> prev;
-        private deque<T> next;
-        deque(T theitem, deque<T> p, deque<T> n) {
+        private D<T> prev;
+        private D<T> next;
+        D(T theitem, D<T> p, D<T> n) {
             elem = theitem;
             prev = p;
             next = n;
@@ -16,12 +15,12 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T>{
 
     }
     private int size;
-    private deque<T> sentinel;
+    private D<T> sentinel;
 
     /*Create an empty linked list deque*/
     public LinkedListDeque() {
         size = 0;
-        sentinel = new deque<T>(null, null, null);
+        sentinel = new D<T>(null, null, null);
     }
 
     /*Return the number of items in the deque.*/
@@ -34,7 +33,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T>{
     /*Add an item of type T to the front of the deque.*/
     @Override
     public void addFirst(T item) {
-        deque<T> m = new deque<T>(item, null, null);
+        D<T> m = new D<T>(item, null, null);
         if (size() == 0) {
             m.next = m;
             m.prev = m;
@@ -53,7 +52,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T>{
     /*print the deque*/
     @Override
     public void printDeque() {
-        deque<T> tmp;
+        D<T> tmp;
         tmp = sentinel.next;
         int n = 0;
         while (tmp != null && n < size) {
@@ -67,7 +66,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T>{
     /*Add an item of type T to the back of the deque.*/
     @Override
     public void addLast(T item) {
-        deque<T> m = new deque<T>(item, null, null);
+        D<T> m = new D<T>(item, null, null);
         if (size() == 0) {
             m.next = m;
             m.prev = m;
@@ -88,7 +87,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T>{
             return null;
         }
         size -= 1;
-        deque<T> d = sentinel.next;
+        D<T> d = sentinel.next;
         T tmp = sentinel.next.elem;
         sentinel.next.prev.next = sentinel.next.next;
         sentinel.next.next.prev = sentinel.next.prev;
@@ -104,7 +103,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T>{
             return null;
         }
         size -= 1;
-        deque<T> d = sentinel.next.prev;
+        D<T> d = sentinel.next.prev;
         T m = d.elem;
         sentinel.next.prev = d.prev;
         d.prev.next = sentinel.next;
@@ -120,13 +119,13 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T>{
         if (index < 0 || index >= size) {
             return null;
         } else if (index < size / 2) {
-            deque<T> d = sentinel;
+            D<T> d = sentinel;
             for (int i = 0; i <= index; ++i) {
                 d = d.next;
             }
             return d.elem;
         } else {
-            deque<T> d = sentinel.next;
+            D<T> d = sentinel.next;
             for (int i = 0; i < size - index; ++i) {
                 d = d.prev;
             }
@@ -147,14 +146,14 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T>{
     }
 
     /*the helper function of getRecursive.*/
-    private T getRecursiveUsingNext(int index, deque<T> d) {
+    private T getRecursiveUsingNext(int index, D<T> d) {
         if (index == 0) {
             return d.elem;
         }
         return getRecursiveUsingNext(index - 1, d.next);
     }
 
-    private T getRecursiveUsingPrev(int index, deque<T> d) {
+    private T getRecursiveUsingPrev(int index, D<T> d) {
         if (index == 0) {
             return d.elem;
         }
@@ -190,7 +189,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T>{
 
     private class LinkedListSetIterator implements Iterator<T> {
         private int _pos;
-        public LinkedListSetIterator() {
+        LinkedListSetIterator() {
             _pos = 0;
         }
 
