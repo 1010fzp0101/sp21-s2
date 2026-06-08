@@ -1,6 +1,8 @@
 package capers;
 
 import java.io.File;
+import java.io.IOException;
+
 import static capers.Utils.*;
 
 /** A repository for Capers 
@@ -18,11 +20,11 @@ public class CapersRepository {
     static final File CWD = new File(System.getProperty("user.dir"));
 
     /** Main metadata folder. */
-    static final File CAPERS_FOLDER = null; // TODO Hint: look at the `join`
+    static final File CAPERS_FOLDER = join(CWD, ".capers"); // TODO Hint: look at the `join`
                                             //      function in Utils
-
+    static final File STORY_FILE = join(CAPERS_FOLDER, "story");
     /**
-     * Does required filesystem operations to allow for persistence.
+     * Does require filesystem operations to allow for persistence.
      * (creates any necessary folders or files)
      * Remember: recommended structure (you do not have to follow):
      *
@@ -32,6 +34,11 @@ public class CapersRepository {
      */
     public static void setupPersistence() {
         // TODO
+        CAPERS_FOLDER.mkdir();
+        Dog.DOG_FOLDER.mkdir();
+        if (!STORY_FILE.exists()) {
+            writeObject(STORY_FILE, "");
+        }
     }
 
     /**
@@ -41,6 +48,10 @@ public class CapersRepository {
      */
     public static void writeStory(String text) {
         // TODO
+        String story = readObject(STORY_FILE, String.class);
+        story += text + '\n';
+        System.out.println(story);
+        writeObject(STORY_FILE, story);
     }
 
     /**
@@ -50,6 +61,9 @@ public class CapersRepository {
      */
     public static void makeDog(String name, String breed, int age) {
         // TODO
+        Dog d = new Dog(name, breed, age);
+        d.saveDog();
+        System.out.println(d);
     }
 
     /**
@@ -60,5 +74,8 @@ public class CapersRepository {
      */
     public static void celebrateBirthday(String name) {
         // TODO
+        Dog d = Dog.fromFile(name);
+        d.haveBirthday();
+        d.saveDog();
     }
 }
