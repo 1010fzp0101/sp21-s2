@@ -9,7 +9,7 @@ import java.util.Iterator;
 public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     private BST<K, V> StoreTree;
 
-    BSTMap() {
+    public BSTMap() {
         StoreTree = new BST<>();
     }
 
