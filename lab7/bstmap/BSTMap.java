@@ -88,4 +88,11 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     public int size() {
         return StoreTree.size();
     }
+
+    public void printInOrder() {
+        for (int i =0; i < size(); i++) {
+            System.out.print(StoreTree.select(i) + " ");
+        }
+        System.out.println();
+    }
 }
