@@ -1,0 +1,46 @@
+Order:
+    Enter # strings to insert into hashmap.MyHashMap: 50000
+    class hashmap.MyHashMap: 0.06 sec
+
+    Enter # strings to insert into Java's HashMap: 50000
+    Java's Built-in HashMap: 0.04 sec
+
+Ramdom:
+    What would you like L to be?: 50
+
+    Enter # strings to insert into hashmap.ULLMap: 30000
+    class hashmap.ULLMap: 2.10 sec
+
+    Enter # strings to insert into your hashmap.MyHashMap: 30000
+    class hashmap.MyHashMap: 0.05 sec
+
+Buckets:
+    Enter # strings to insert into each map: 10000
+    class hashmap.MyHashMapALBuckets: 0.02 sec
+    class hashmap.MyHashMapLLBuckets: 0.01 sec
+    class hashmap.MyHashMapTSBuckets: 0.01 sec
+    class hashmap.MyHashMapHSBuckets: 0.01 sec
+    class hashmap.MyHashMapPQBuckets: 0.01 sec
+
+    Enter # strings to insert into each map: 30000
+    class hashmap.MyHashMapALBuckets: 0.03 sec
+    class hashmap.MyHashMapLLBuckets: 0.01 sec
+    class hashmap.MyHashMapTSBuckets: 0.01 sec
+    class hashmap.MyHashMapHSBuckets: 0.01 sec
+    class hashmap.MyHashMapPQBuckets: 0.01 sec
+
+    Enter # strings to insert into each map: 50000
+    class hashmap.MyHashMapALBuckets: 0.05 sec
+    class hashmap.MyHashMapLLBuckets: 0.02 sec
+    class hashmap.MyHashMapTSBuckets: 0.02 sec
+    class hashmap.MyHashMapHSBuckets: 0.02 sec
+    class hashmap.MyHashMapPQBuckets: 0.02 sec
+
+    Enter # strings to insert into each map: 60000
+    class hashmap.MyHashMapALBuckets: 0.05 sec
+    class hashmap.MyHashMapLLBuckets: 0.03 sec
+    class hashmap.MyHashMapTSBuckets: 0.02 sec
+    class hashmap.MyHashMapHSBuckets: 0.03 sec
+    class hashmap.MyHashMapPQBuckets: 0.02 sec
+
+
