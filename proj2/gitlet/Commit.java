@@ -33,8 +33,7 @@ public class Commit implements Serializable {
     /* TODO: fill in the rest of this class. */
 
     public Commit(String message) {
-        HashMap<String, String> map = new HashMap<>();
-        this(message, map, null);
+        this(message, new HashMap<>(), null);
         this.timestamp = dateToTimeStamp((new Date(0)));
     }
 
