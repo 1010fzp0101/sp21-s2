@@ -14,9 +14,12 @@ import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Formatter;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import static gitlet.Repository.*;
+
+import static java.time.ZoneOffset.UTC;
 
 
 /** Assorted utilities.
@@ -136,6 +139,11 @@ class Utils {
         }
     }
 
+
+    /* translate the object to the according hash value and write it
+    to the file.
+     */
+
     /** Return an object of type T read from FILE, casting it to EXPECTEDCLASS.
      *  Throws IllegalArgumentException in case of problems. */
     static <T extends Serializable> T readObject(File file,
@@ -152,10 +160,20 @@ class Utils {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    static HashMap<String, String> readFromStagingArea(File file) {
+        if (file.length() == 0) {
+            return new HashMap<>();
+        } else {
+            return readObject(file, HashMap.class);
+        }
+    }
+
     /** Write OBJ to FILE. */
     static void writeObject(File file, Serializable obj) {
         writeContents(file, serialize(obj));
     }
+
 
     /* DIRECTORIES */
 
@@ -236,4 +254,106 @@ class Utils {
         System.out.printf(msg, args);
         System.out.println();
     }
+
+    /* Thu Nov 9 20:00:05 2017 -0800 */
+    static String dateToTimeStamp(Date date) {
+        DateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+        return dateFormat.format(date);
+    }
+
+    static String getCurrentBranchName() {
+        return readContentsAsString(HEAD);
+    }
+
+    static File getCurrentBranchFile() {
+        return join(REFS_DIR, getCurrentBranchName());
+    }
+
+    static String getCommitIDByHEAD() {
+        String branchName = getCurrentBranchName();
+        return readContentsAsString(join(REFS_DIR, branchName));
+    }
+
+    static Commit getCommitByHEAD() {
+        String commitID = getCommitIDByHEAD();
+        File currentCommitFile = join(COMMITs, commitID);
+        Commit currentCommit = readObject(currentCommitFile, Commit.class);
+        return currentCommit;
+    }
+
+    static Commit getCommitOfBranch(String branchName) {
+        String commitID = readContentsAsString(join(REFS_DIR, branchName));
+        File commitFileOfTheBranch = join(COMMITs, commitID);
+        return readObject(commitFileOfTheBranch, Commit.class);
+    }
+
+    static HashMap<String, String> getFileNamesOfBranch(String branchName) {
+        Commit commitOfBranch = getCommitOfBranch(branchName);
+        return commitOfBranch.getNameToHash();
+    }
+
+    static List<String> fileNamesByHEAD() {
+        return getCommitByHEAD().getFileNames();
+    }
+
+    static List<String> fileHashesByHEAD() {
+        return getCommitByHEAD().getFileHashes();
+    }
+
+    static boolean isTrackedByHEAD(String name) {
+        List<String> list = fileNamesByHEAD();
+        return list.contains(name);
+    }
+
+    static boolean isTrackedByBranch(String branchName, String filename) {
+        HashMap<String, String> commitMap = getFileNamesOfBranch(branchName);
+        return commitMap.containsKey(filename);
+    }
+
+    @SuppressWarnings("unchecked")
+    static boolean isInIndex(String name) {
+        HashMap<String, String> index = readFromStagingArea(INDEX);
+        return index.containsKey(name);
+    }
+
+    @SuppressWarnings("unchecked")
+    static boolean isInRmIndex(String name) {
+        HashMap<String, String> rmIndex = readFromStagingArea(INDEX_RM);
+        return rmIndex.containsKey(name);
+    }
+
+    static void clearIndex() {
+        HashMap<String, String> map = new HashMap<>();
+        writeObject(INDEX, map);
+    }
+
+    static void clearIndexRm() {
+        HashMap<String, String> map = new HashMap<>();
+        writeObject(INDEX_RM, map);
+    }
+
+    static void addCommitToDirCommit(Commit cmt) {
+        //write the commit object to the file in the Dir for Commit
+        String hash = cmt.getID();
+        File file = join(COMMITs, hash);
+        writeObject(file, cmt);
+
+        // update the branch
+        File branch = getCurrentBranchFile();
+        writeContents(branch, hash);
+    }
+
+    @SuppressWarnings("unchecked")
+    static boolean indexIsEmpty() {
+        HashMap<String, String> indexMap = readFromStagingArea(INDEX);
+        return indexMap.isEmpty();
+    }
+
+    static Commit prevCommit(Commit cmt) {
+        String parentID = cmt.getParent1ID();
+        File parentFile = join(COMMITs, parentID);
+        return readObject(parentFile, Commit.class);
+    }
+
 }
