@@ -41,20 +41,24 @@ public class Repository implements Serializable {
 
     /* TODO: fill in the rest of this class. */
 
-    public static void initCommand() throws IOException {
+    public static void initCommand() {
         /* check whether the directory has been initialized*/
         if (GITLET_DIR.exists()) {
             System.out.println("A Gitlet version-control system already exists in the current directory.");
             System.exit(0);
         }
 
-        GITLET_DIR.mkdir();
-        INDEX.createNewFile();
-        INDEX_RM.createNewFile();
-        REFS_DIR.mkdir();
-        OBJECT_DIR.mkdir();
-        BLOBs.mkdir();
-        COMMITs.mkdir();
+        try {
+            GITLET_DIR.mkdir();
+            INDEX.createNewFile();
+            INDEX_RM.createNewFile();
+            REFS_DIR.mkdir();
+            OBJECT_DIR.mkdir();
+            BLOBs.mkdir();
+            COMMITs.mkdir();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // add the initial Commit
         Commit initialCommit = new Commit("initial commit");
