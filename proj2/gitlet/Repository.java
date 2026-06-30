@@ -3,29 +3,11 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.sql.Blob;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import static gitlet.Utils.*;
 
-// TODO: any imports you need here
-
-/** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
- *
- *  @author TODO
- */
 public class Repository implements Serializable {
-    /**
-     * TODO: add instance variables here.
-     *
-     * List all instance variables of the Repository class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided two examples for you.
-     */
 
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
@@ -39,7 +21,6 @@ public class Repository implements Serializable {
     public static final File REFS_DIR = join(GITLET_DIR, "refs");
     public static File HEAD = join(GITLET_DIR, "HEAD");
 
-    /* TODO: fill in the rest of this class. */
 
     public static void initCommand() {
         /* check whether the directory has been initialized*/
@@ -82,7 +63,8 @@ public class Repository implements Serializable {
             System.exit(0);
         }
 
-        HashMap<String, String> fileToHash = readFromStagingArea(INDEX);
+        HashMap<String, String> index = readFromStagingArea(INDEX);
+        HashMap<String, String> RmInex = readFromStagingArea(INDEX_RM);
         byte[] bytes = readContents(file);
         String hash = sha1((Object) bytes);
 
@@ -93,15 +75,19 @@ public class Repository implements Serializable {
         HashMap<String, String> map = getCommitByHEAD().getNameToHash();
         if (map.containsKey(filename) && map.get(filename).equals(hash)) {
             if (isInIndex(filename)) {
-                fileToHash.remove(filename);
-                writeObject(INDEX, fileToHash);
+                index.remove(filename);
+                writeObject(INDEX, index);
+            }
+            if (isInRmIndex(filename)) {
+                RmInex.remove(filename);
+                writeObject(INDEX_RM, RmInex);
             }
             System.exit(0);
         }
 
         writeContents(join(BLOBs, hash), bytes);
-        fileToHash.put(filename, hash);
-        writeObject(INDEX, fileToHash);
+        index.put(filename, hash);
+        writeObject(INDEX, index);
     }
 
     @SuppressWarnings("unchecked")
@@ -114,7 +100,6 @@ public class Repository implements Serializable {
 
         String parentID = getCommitIDByHEAD();
         Commit parentCommit = getCommitByHEAD();
-
         HashMap<String, String> blobToName = parentCommit.getNameToHash();
         HashMap<String, String> indexMap = readObject(INDEX, HashMap.class);
         HashMap<String, String> indexRmMap = readFromStagingArea(INDEX_RM);
@@ -141,7 +126,7 @@ public class Repository implements Serializable {
     public static void rm(String filename) {
         File file = join(CWD, filename);
         HashMap<String, String> rmMap = readFromStagingArea(INDEX_RM);
-        HashMap<String, String> indexMap = readObject(INDEX, HashMap.class);
+        HashMap<String, String> indexMap = readFromStagingArea(INDEX);
 
         /* If the file is neither staged nor tracked by the head commit
          , print the error message */
@@ -174,6 +159,10 @@ public class Repository implements Serializable {
         while (current != null) {
             System.out.println("===");
             System.out.println("commit " + current.getID());
+            if (current.getParent2ID() != null) {
+                System.out.println("Merge: " + current.getParent1ID().substring(0, 7)
+                    + " " + current.getParent2ID().substring(0, 7));
+            }
             System.out.println("Date: " + current.getTimestamp());
             System.out.println(current.getMessage());
             System.out.println();
@@ -190,6 +179,10 @@ public class Repository implements Serializable {
             Commit cmt = readObject(join(COMMITs, hash), Commit.class);
             System.out.println("===");
             System.out.println("commit " + cmt.getID());
+            if (cmt.getParent2ID() != null) {
+                System.out.println("Merge: " + cmt.getParent1ID().substring(0, 7)
+                        + " " + cmt.getParent2ID().substring(0, 7));
+            }
             System.out.println("Date: " + cmt.getTimestamp());
             System.out.println(cmt.getMessage());
             System.out.println();
@@ -255,11 +248,11 @@ public class Repository implements Serializable {
             if (file.exists()) {
                 String fileHash = sha1((Object) readContents(file));
                 if (!fileHash.equals(hash) && !isInIndex(name)) {
-                    System.out.println(name);
+                    System.out.println(name + " (modified)");
                 }
             } else {
                 if (!isInRmIndex(name)) {
-                    System.out.println(name);
+                    System.out.println(name + " (deleted)");
                 }
             }
         }
@@ -272,8 +265,9 @@ public class Repository implements Serializable {
                 if (!fileHash.equals(hash)) {
                     System.out.println(name);
                 }
+            } else {
+                System.out.println(name + " (deleted)");
             }
-            System.out.println();
         }
         System.out.println();
 
@@ -302,6 +296,7 @@ public class Repository implements Serializable {
         boolean existCommit = false;
         for (String hash : commitList) {
             if (hash.startsWith(commitID)) {
+                commitID = hash;
                 existCommit = true;
                 break;
             }
@@ -400,22 +395,194 @@ public class Repository implements Serializable {
     }
 
     public static void reset(String commitID) {
-        writeContents(getCurrentBranchFile(), commitID);
-        HashMap<String, String> currentFileName = getFileNamesOfBranch(getCurrentBranchName());
-        for (String names : currentFileName.keySet()) {
-            checkout2(commitID, names);
+        List<String> commitList = plainFilenamesIn(COMMITs);
+        String fullID = null;
+        for (String id : commitList) {
+            if (id.startsWith(commitID)) {
+                fullID = id;
+            }
+        }
+        if (fullID == null) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        HashMap<String, String> commitMap = getFileNamesOfCommitID(fullID);
+        List<String> cwdList = plainFilenamesIn(CWD);
+        if (cwdList == null) {
+            cwdList = new ArrayList<>();
+        }
+        for (String fileName : cwdList) {
+            if (!isTrackedByHEAD(fileName) && commitMap.containsKey(fileName)) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
+            }
+        }
+        for (Map.Entry<String, String> entry : commitMap.entrySet()) {
+            String name = entry.getKey();
+            String id = entry.getValue();
+            checkout2(fullID, name);
+        }
+        HashMap<String, String> currentFile = getFileNamesOfBranch(getCurrentBranchName());
+        for (String name : currentFile.keySet()) {
+            if (!commitMap.containsKey(name)) {
+                restrictedDelete(name);
+            }
+        }
+        clearIndex();
+        clearIndexRm();
+        writeContents(getCurrentBranchFile(), fullID);
+    }
+
+    public static void merge(String givenBranchName) {
+        /* If there are staged additions or removals present, print the error message
+        You have uncommitted changes. */
+        if (!indexIsEmpty() || !indexRmIsEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+
+        /*If a branch with the given name does not exist, print the error message
+        A branch with that name does not exist. */
+        if (!isBranchExist(givenBranchName)) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+
+        String currentBranchName = getCurrentBranchName();
+        Commit currentCommit = getCommitByHEAD();
+        Commit givenCommit = getCommitOfBranch(givenBranchName);
+        String currentCommitID = currentCommit.getID();
+        String givenCommitID = givenCommit.getID();
+        String splitCommitID = findSplitPoint(currentCommitID, givenCommitID);
+        HashMap<String, String> givenBranchFileMap = getFileNamesOfBranch(givenBranchName);
+        HashMap<String, String> currentBranchFileMap = getFileNamesOfBranch(currentBranchName);
+        List<String> cwdList = plainFilenamesIn(CWD);
+
+        /*If attempting to merge a branch with itself, print the error message
+        Cannot merge a branch with itself. */
+        if (givenBranchName.equals(currentBranchName)) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
+
+        /*  If the split point is the same commit as the given branch, then we do nothing;*/
+        if (splitCommitID.equals(givenCommitID)) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            System.exit(0);
+        }
+
+        /* If the split point is the current branch, then the effect is to check out
+        the given branch */
+        if (splitCommitID.equals(currentCommitID)) {
+            checkout3(givenBranchName);
+            System.out.println("Current branch fast-forwarded.");
+            System.exit(0);
+        }
+
+        /* If an untracked file in the current commit would be overwritten or
+        deleted by the merge, print There is an untracked file in the way; delete it,
+         or add and commit it first. and exit*/
+        if (cwdList != null) {
+            for (String name : cwdList) {
+                if (!isTrackedByHEAD(name) && (isInBranch(name, givenBranchName)
+                    || isInCommit(name, splitCommitID)
+                        && !isInBranch(name, givenBranchName))) {
+                    System.out.println("There is an untracked file in the way; delete it, "
+                            + "or add and commit it first.");
+                    System.exit(0);
+                }
+            }
+        }
+
+        /* Any files that have been modified in the given branch since the split point,
+        but not modified in the current branch since the split point should be changed to
+     their versions in the given branch, These files should then all be automatically staged.
+         */
+        for (Map.Entry<String, String> entry : givenBranchFileMap.entrySet()) {
+            String name = entry.getKey();
+            String hash = entry.getValue();
+            if (isInBranch(name, currentBranchName)
+                && isInCommit(name, splitCommitID)
+                && isModifiedID(name, splitCommitID, givenCommitID)
+                && !isModifiedID(name, splitCommitID, currentCommitID)) {
+                addToStagingArea(name, hash, INDEX);
+            }
+        /* Any files that were not present at the split point and are present
+         only in the given branch should be checked out and staged. */
+            if (!isInBranch(name, currentBranchName)
+                && !isInCommit(name, splitCommitID)) {
+                checkout2(givenCommitID, name);
+                addToStagingArea(name, hash, INDEX);
+            }
+            /* else in conflict
+            the contents of both are changed and different from other, or the contents of
+            the given are changed and the other file is deleted, or the file was absent at
+            the split point and has different contents in the given and current branches
+             */
+            if (isInCommit(name, splitCommitID)) {
+                if (isInBranch(name, currentBranchName)
+                    && !currentBranchFileMap.get(name).equals(hash)) {
+                    differentConflict();
+                } else if (!isInBranch(name, currentBranchName)
+                && !getHashInCommitID(name, splitCommitID).equals(hash)) {
+                    deletedConflict();
+                }
+            } else {
+                if (isInBranch(name, currentBranchName) &&
+                        !currentBranchFileMap.get(name).equals(hash)) {
+                    differentConflict();
+                }
+            }
+        }
+
+        /* Any files present at the split point, unmodified in the current branch,
+         and absent in the given branch should be removed (and untracked). */
+        for (Map.Entry<String, String> entry : currentBranchFileMap.entrySet()) {
+            String name = entry.getKey();
+            String hash = entry.getValue();
+            if (isInCommit(name, splitCommitID)
+                && !isModifiedID(name, splitCommitID, currentCommitID)
+                && !isInBranch(name, givenBranchName)) {
+                rm(name);
+            }
+            /* else in conflict
+            the contents of current are changed and the other file is deleted */
+            if (isInCommit(name, splitCommitID)
+                && !isInBranch(name, givenBranchName)) {
+                
+            }
         }
     }
 
-    public static void merge() {}
+    private static File deletedConflict(String original, String modified) {}
 
-    public static void addRemote() {}
+    private static File differentConflict(String original, String modified) {}
 
-    public static void rmRemote() {}
+    /* the file being added must be in blob dir */
+    private static void addToStagingArea(String fileName, String hash, File stagingArea) {
+        HashMap<String, String> index = readFromStagingArea(stagingArea);
+        index.put(fileName, hash);
+    }
 
-    public static void push() {}
+    private static String findSplitPoint(String currentBranchID, String givenBranchID) {
+        Set<String> currentAncestor = new HashSet<>();
+        String id = currentBranchID;
+        while (id != null && !id.isEmpty()) {
+            currentAncestor.add(id);
+            File currentCommitFile = join(COMMITs, id);
+            Commit currentCommit = readObject(currentCommitFile, Commit.class);
+            id = currentCommit.getParent1ID();
+        }
+        id = givenBranchID;
+        while (id != null && !id.isEmpty()) {
+            if (currentAncestor.contains(id)) {
+                return id;
+            }
+            File givenCommitFile = join(COMMITs, id);
+            Commit givenCommit = readObject(givenCommitFile, Commit.class);
+            id = givenCommit.getParent1ID();
+        }
+        return null;
+    }
 
-    public static void fetch() {}
-
-    public static void pull() {}
 }

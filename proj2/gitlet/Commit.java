@@ -5,16 +5,8 @@ import java.util.*;
 
 import static gitlet.Utils.*;
 
-/** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
- *
- *  @author TODO
- */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
-     *
      * List all instance variables of the Commit class here with a useful
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided one example for `message`.
@@ -25,12 +17,11 @@ public class Commit implements Serializable {
     private String parent1ID = null;  // the parent hash value
     private String parent2ID = null;  // the parent2(which happens when merge) hash value
     private String timestamp; // the commit time
-    public String ID; // the commit's id
+    private String ID; // the commit's id
     //The commit's tracked file's content
     private Map<String, String> blobNameTohash;
 
 
-    /* TODO: fill in the rest of this class. */
 
     public Commit(String message) {
         this(message, new HashMap<>(), null);

@@ -3,7 +3,6 @@ package gitlet;
 import java.io.IOException;
 import static gitlet.Repository.*;
 /** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author TODO
  */
 public class Main {
 
@@ -11,14 +10,12 @@ public class Main {
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) {
-        // TODO: what if args is empty?
         if (args.length == 0) {
             throw new RuntimeException("Please enter a command.");
         }
         String firstArg = args[0];
         switch(firstArg) {
             case "init":
-                // TODO: handle the `init` command
                 valideNumArgs(args, 1);
                 initCommand();
                 break;
@@ -30,14 +27,12 @@ public class Main {
 
                 add(args[1]);
                 break;
-            // TODO: FILL THE REST IN.
             case "commit":
                 // check whether there exists message
-                if (args.length != 2) {
+                if (args.length != 2 || args[1].isEmpty()) {
                     System.out.println("Please enter a commit message.");
                     System.exit(0);
                 }
-                valideNumArgs(args, 2);
                 commit(args[1]);
                 break;
             case "rm":
@@ -84,16 +79,8 @@ public class Main {
                 reset(args[1]);
                 break;
             case "merge":
-                break;
-            case "add-remote":
-                break;
-            case "rm-remote":
-                break;
-            case "push":
-                break;
-            case "fetch":
-                break;
-            case "pull":
+                valideNumArgs(args, 2);
+                merge(args[1]);
                 break;
             default:
                 throw new RuntimeException("No command with that name exists.");

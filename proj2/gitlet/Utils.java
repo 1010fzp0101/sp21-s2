@@ -238,8 +238,6 @@ class Utils {
         }
     }
 
-
-
     /* MESSAGES AND ERROR REPORTING */
 
     /** Return a GitletException whose message is composed from MSG and ARGS as
@@ -288,9 +286,24 @@ class Utils {
         return readObject(commitFileOfTheBranch, Commit.class);
     }
 
+    static Commit getCommitByCommitID(String commitID) {
+        File commitFile = join(COMMITs, commitID);
+        return readObject(commitFile, Commit.class);
+    }
+
     static HashMap<String, String> getFileNamesOfBranch(String branchName) {
         Commit commitOfBranch = getCommitOfBranch(branchName);
         return commitOfBranch.getNameToHash();
+    }
+
+    static HashMap<String, String> getFileNamesOfCommitID(String commitID) {
+        Commit commit = getCommitByCommitID(commitID);
+        return commit.getNameToHash();
+    }
+
+    static String getHashInCommitID(String fileName, String commitID) {
+        HashMap<String, String> map = getFileNamesOfCommitID(commitID);
+        return map.get(fileName);
     }
 
     static List<String> fileNamesByHEAD() {
@@ -323,6 +336,38 @@ class Utils {
         return rmIndex.containsKey(name);
     }
 
+    static boolean isInBranch(String fileName, String branchName) {
+        HashMap<String, String> commitMap = getFileNamesOfBranch(branchName);
+        return commitMap.containsKey(fileName);
+    }
+
+    static boolean
+    isModifiedID(String fileName, String currentCommitID, String givenCommitID) {
+        Commit currentCommit = getCommitByCommitID(currentCommitID);
+        Commit givenCommit = getCommitByCommitID(givenCommitID);
+        HashMap<String, String> currentMap = currentCommit.getNameToHash();
+        HashMap<String, String> givenMap = givenCommit.getNameToHash();
+        return !givenMap.get(fileName).equals(currentMap.get(fileName));
+    }
+
+    static boolean
+    isModifiedName(String fileName, String currentBranchName, String givenBranchName) {
+        HashMap<String, String> currentBranchFileMap = getFileNamesOfBranch(currentBranchName);
+        HashMap<String, String> givenBranchFileMap = getFileNamesOfBranch(givenBranchName);
+        return !givenBranchFileMap.get(fileName).equals(currentBranchFileMap.get(fileName));
+    }
+
+    static boolean isBranchExist(String branchName) {
+        List<String> branchNameList = plainFilenamesIn(REFS_DIR);
+        return branchNameList.contains(branchName);
+    }
+
+    static boolean isInCommit(String filename, String commitID) {
+        Commit commit = getCommitByCommitID(commitID);
+        HashMap<String, String> map = commit.getNameToHash();
+        return map.containsKey(filename);
+    }
+
     static void clearIndex() {
         HashMap<String, String> map = new HashMap<>();
         writeObject(INDEX, map);
@@ -348,6 +393,11 @@ class Utils {
     static boolean indexIsEmpty() {
         HashMap<String, String> indexMap = readFromStagingArea(INDEX);
         return indexMap.isEmpty();
+    }
+
+    static boolean indexRmIsEmpty() {
+        HashMap<String, String> indexRmMap = readFromStagingArea(INDEX_RM);
+        return indexRmMap.isEmpty();
     }
 
     static Commit prevCommit(Commit cmt) {
