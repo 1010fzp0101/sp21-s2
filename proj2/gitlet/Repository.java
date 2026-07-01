@@ -484,15 +484,15 @@ public class Repository implements Serializable {
          or add and commit it first. and exit*/
         if (cwdList != null) {
             for (String name : cwdList) {
-                if (!isTrackedByHEAD(name) && (isInBranch(name, givenBranchName)
-                    || isInCommit(name, splitCommitID)
-                        && !isInBranch(name, givenBranchName))) {
+                if (!isTrackedByHEAD(name) && isInBranch(name, givenBranchName)) {
                     System.out.println("There is an untracked file in the way; delete it, "
                             + "or add and commit it first.");
                     System.exit(0);
                 }
             }
         }
+
+        Boolean isConflict = false;
 
         /* Any files that have been modified in the given branch since the split point,
         but not modified in the current branch since the split point should be changed to
@@ -501,10 +501,12 @@ public class Repository implements Serializable {
         for (Map.Entry<String, String> entry : givenBranchFileMap.entrySet()) {
             String name = entry.getKey();
             String hash = entry.getValue();
+            String givenContent = readContentsAsString(join(BLOBs, hash));
             if (isInBranch(name, currentBranchName)
                 && isInCommit(name, splitCommitID)
                 && isModifiedID(name, splitCommitID, givenCommitID)
                 && !isModifiedID(name, splitCommitID, currentCommitID)) {
+                checkout2(givenCommitID, name);
                 addToStagingArea(name, hash, INDEX);
             }
         /* Any files that were not present at the split point and are present
@@ -521,16 +523,22 @@ public class Repository implements Serializable {
              */
             if (isInCommit(name, splitCommitID)) {
                 if (isInBranch(name, currentBranchName)
-                    && !currentBranchFileMap.get(name).equals(hash)) {
-                    differentConflict();
+                    && !currentBranchFileMap.get(name).equals(hash)
+                    && isModifiedID(name, splitCommitID, currentCommitID)) {
+                    String currentContent = readContentsAsString(join(CWD, name));
+                    writeConflict(currentContent, givenContent, name);
+                    isConflict = true;
                 } else if (!isInBranch(name, currentBranchName)
                 && !getHashInCommitID(name, splitCommitID).equals(hash)) {
-                    deletedConflict();
+                    writeConflict("", givenContent, name);
+                    isConflict = true;
                 }
             } else {
                 if (isInBranch(name, currentBranchName) &&
                         !currentBranchFileMap.get(name).equals(hash)) {
-                    differentConflict();
+                    String currentContent = readContentsAsString(join(CWD, name));
+                    writeConflict(currentContent, givenContent, name);
+                    isConflict = true;
                 }
             }
         }
@@ -540,6 +548,7 @@ public class Repository implements Serializable {
         for (Map.Entry<String, String> entry : currentBranchFileMap.entrySet()) {
             String name = entry.getKey();
             String hash = entry.getValue();
+            String currentContent = readContentsAsString(join(BLOBs, hash));
             if (isInCommit(name, splitCommitID)
                 && !isModifiedID(name, splitCommitID, currentCommitID)
                 && !isInBranch(name, givenBranchName)) {
@@ -548,20 +557,31 @@ public class Repository implements Serializable {
             /* else in conflict
             the contents of current are changed and the other file is deleted */
             if (isInCommit(name, splitCommitID)
-                && !isInBranch(name, givenBranchName)) {
-                
+                && !isInBranch(name, givenBranchName)
+                && isModifiedID(name, splitCommitID, currentCommitID)) {
+                writeConflict(currentContent, "", name);
+                isConflict = true;
             }
+        }
+
+        commit("Merged " + givenBranchName + " into " + currentBranchName + ".");
+        if (isConflict) {
+            System.out.println("Encountered a merge conflict.");
         }
     }
 
-    private static File deletedConflict(String original, String modified) {}
-
-    private static File differentConflict(String original, String modified) {}
+    private static void writeConflict(String currentContent,
+                                      String givenContent, String filename) {
+        String conflict = "<<<<<<< HEAD\n" + currentContent + "=======\n" +
+                givenContent + ">>>>>>>\n";
+        writeContents(join(CWD, filename), conflict);
+    }
 
     /* the file being added must be in blob dir */
     private static void addToStagingArea(String fileName, String hash, File stagingArea) {
         HashMap<String, String> index = readFromStagingArea(stagingArea);
         index.put(fileName, hash);
+        writeObject(stagingArea, index);
     }
 
     private static String findSplitPoint(String currentBranchID, String givenBranchID) {
