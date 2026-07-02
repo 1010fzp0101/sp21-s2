@@ -19,9 +19,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import static gitlet.Repository.*;
 
-import static java.time.ZoneOffset.UTC;
-
-
 /** Assorted utilities.
  *
  * Give this file a good read as it provides several useful utility functions
@@ -261,7 +258,7 @@ class Utils {
     }
 
     static String getCurrentBranchName() {
-        return readContentsAsString(HEAD);
+        return readContentsAsString(join(GITLET_DIR, "HEAD"));
     }
 
     static File getCurrentBranchFile() {
@@ -275,19 +272,19 @@ class Utils {
 
     static Commit getCommitByHEAD() {
         String commitID = getCommitIDByHEAD();
-        File currentCommitFile = join(COMMITs, commitID);
+        File currentCommitFile = join(COMMITS, commitID);
         Commit currentCommit = readObject(currentCommitFile, Commit.class);
         return currentCommit;
     }
 
     static Commit getCommitOfBranch(String branchName) {
         String commitID = readContentsAsString(join(REFS_DIR, branchName));
-        File commitFileOfTheBranch = join(COMMITs, commitID);
+        File commitFileOfTheBranch = join(COMMITS, commitID);
         return readObject(commitFileOfTheBranch, Commit.class);
     }
 
     static Commit getCommitByCommitID(String commitID) {
-        File commitFile = join(COMMITs, commitID);
+        File commitFile = join(COMMITS, commitID);
         return readObject(commitFile, Commit.class);
     }
 
@@ -341,8 +338,8 @@ class Utils {
         return commitMap.containsKey(fileName);
     }
 
-    static boolean
-    isModifiedID(String fileName, String currentCommitID, String givenCommitID) {
+    static boolean isModifiedID(String fileName, String currentCommitID,
+                                String givenCommitID) {
         Commit currentCommit = getCommitByCommitID(currentCommitID);
         Commit givenCommit = getCommitByCommitID(givenCommitID);
         HashMap<String, String> currentMap = currentCommit.getNameToHash();
@@ -350,8 +347,8 @@ class Utils {
         return !givenMap.get(fileName).equals(currentMap.get(fileName));
     }
 
-    static boolean
-    isModifiedName(String fileName, String currentBranchName, String givenBranchName) {
+    static boolean isModifiedName(String fileName, String currentBranchName,
+                                  String givenBranchName) {
         HashMap<String, String> currentBranchFileMap = getFileNamesOfBranch(currentBranchName);
         HashMap<String, String> givenBranchFileMap = getFileNamesOfBranch(givenBranchName);
         return !givenBranchFileMap.get(fileName).equals(currentBranchFileMap.get(fileName));
@@ -381,7 +378,7 @@ class Utils {
     static void addCommitToDirCommit(Commit cmt) {
         //write the commit object to the file in the Dir for Commit
         String hash = cmt.getID();
-        File file = join(COMMITs, hash);
+        File file = join(COMMITS, hash);
         writeObject(file, cmt);
 
         // update the branch
@@ -402,7 +399,7 @@ class Utils {
 
     static Commit prevCommit(Commit cmt) {
         String parentID = cmt.getParent1ID();
-        File parentFile = join(COMMITs, parentID);
+        File parentFile = join(COMMITS, parentID);
         return readObject(parentFile, Commit.class);
     }
 

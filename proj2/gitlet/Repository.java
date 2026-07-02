@@ -14,18 +14,19 @@ public class Repository implements Serializable {
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
     public static final File OBJECT_DIR = join(GITLET_DIR, "objects");
-    public static final File BLOBs = join(OBJECT_DIR, "blob");
-    public static final File COMMITs = join(OBJECT_DIR, "commits");
+    public static final File BLOBS = join(OBJECT_DIR, "blob");
+    public static final File COMMITS = join(OBJECT_DIR, "commits");
     public static final File INDEX = join(GITLET_DIR, "index");
     public static final File INDEX_RM = join(GITLET_DIR, "index_rm");
     public static final File REFS_DIR = join(GITLET_DIR, "refs");
-    public static File HEAD = join(GITLET_DIR, "HEAD");
+    private static File HEAD = join(GITLET_DIR, "HEAD");
 
 
     public static void initCommand() {
         /* check whether the directory has been initialized*/
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system already exists " +
+                    "in the current directory.");
             System.exit(0);
         }
 
@@ -35,8 +36,8 @@ public class Repository implements Serializable {
             INDEX_RM.createNewFile();
             REFS_DIR.mkdir();
             OBJECT_DIR.mkdir();
-            BLOBs.mkdir();
-            COMMITs.mkdir();
+            BLOBS.mkdir();
+            COMMITS.mkdir();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -64,7 +65,7 @@ public class Repository implements Serializable {
         }
 
         HashMap<String, String> index = readFromStagingArea(INDEX);
-        HashMap<String, String> RmInex = readFromStagingArea(INDEX_RM);
+        HashMap<String, String> rmInex = readFromStagingArea(INDEX_RM);
         byte[] bytes = readContents(file);
         String hash = sha1((Object) bytes);
 
@@ -79,13 +80,13 @@ public class Repository implements Serializable {
                 writeObject(INDEX, index);
             }
             if (isInRmIndex(filename)) {
-                RmInex.remove(filename);
-                writeObject(INDEX_RM, RmInex);
+                rmInex.remove(filename);
+                writeObject(INDEX_RM, rmInex);
             }
             System.exit(0);
         }
 
-        writeContents(join(BLOBs, hash), bytes);
+        writeContents(join(BLOBS, hash), bytes);
         index.put(filename, hash);
         writeObject(INDEX, index);
     }
@@ -93,7 +94,7 @@ public class Repository implements Serializable {
     @SuppressWarnings("unchecked")
     public static void commit(String message) {
         //check whether there exists some files to be staged
-        if (indexIsEmpty()) {
+        if (indexIsEmpty() && indexRmIsEmpty()) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -174,9 +175,9 @@ public class Repository implements Serializable {
     }
 
     public static void globalLog() {
-        List<String> list = plainFilenamesIn(COMMITs);
+        List<String> list = plainFilenamesIn(COMMITS);
         for (String hash : list) {
-            Commit cmt = readObject(join(COMMITs, hash), Commit.class);
+            Commit cmt = readObject(join(COMMITS, hash), Commit.class);
             System.out.println("===");
             System.out.println("commit " + cmt.getID());
             if (cmt.getParent2ID() != null) {
@@ -191,9 +192,9 @@ public class Repository implements Serializable {
 
     public static void find(String message) {
         boolean found = false;
-        List<String> list = plainFilenamesIn(COMMITs);
+        List<String> list = plainFilenamesIn(COMMITS);
         for (String hash : list) {
-            Commit cmt = readObject(join(COMMITs, hash), Commit.class);
+            Commit cmt = readObject(join(COMMITS, hash), Commit.class);
             if (cmt.getMessage().equals(message)) {
                 System.out.println(hash);
                 found = true;
@@ -292,7 +293,7 @@ public class Repository implements Serializable {
      that’s already there if there is one
      */
     public static void checkout2(String commitID, String filename) {
-        List<String> commitList = plainFilenamesIn(COMMITs);
+        List<String> commitList = plainFilenamesIn(COMMITS);
         boolean existCommit = false;
         for (String hash : commitList) {
             if (hash.startsWith(commitID)) {
@@ -305,7 +306,7 @@ public class Repository implements Serializable {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
-        File commitFile = join(COMMITs, commitID);
+        File commitFile = join(COMMITS, commitID);
         Commit cmt = readObject(commitFile, Commit.class);
         HashMap<String, String> commitMap = cmt.getNameToHash();
         if (!commitMap.containsKey(filename)) {
@@ -313,7 +314,7 @@ public class Repository implements Serializable {
             System.exit(0);
         }
         String fileHash = commitMap.get(filename);
-        File blobFile = join(BLOBs, fileHash);
+        File blobFile = join(BLOBS, fileHash);
         File cwdFile = join(CWD, filename);
         writeContents(cwdFile, (Object) readContents(blobFile));
     }
@@ -339,10 +340,10 @@ public class Repository implements Serializable {
         List<String> cwdList = plainFilenamesIn(CWD);
         String currentBranch = getCurrentBranchName();
         for (String name : cwdList) {
-            if (!isTrackedByBranch(name, currentBranch)
+            if (!isTrackedByBranch(currentBranch, name)
                     && commitFilesOfBranch.containsKey(name)) {
-                System.out.println("There is an untracked file in the way; " +
-                        "delete it, or add and commit it first.");
+                System.out.println("There is an untracked file in the way; "
+                        + "delete it, or add and commit it first.");
                 System.exit(0);
             }
         }
@@ -353,14 +354,14 @@ public class Repository implements Serializable {
                 continue;
             }
             File currentFile = join(CWD, name);
-            File branchFile = join(BLOBs, commitFilesOfBranch.get(name));
+            File branchFile = join(BLOBS, commitFilesOfBranch.get(name));
             writeContents(currentFile, (Object) readContents(branchFile));
         }
         for (Map.Entry<String, String> entry : commitFilesOfBranch.entrySet()) {
             String name = entry.getKey();
             if (!cwdList.contains(name)) {
                 File currentFile = join(CWD, name);
-                File branch = join(BLOBs, entry.getValue());
+                File branch = join(BLOBS, entry.getValue());
                 writeContents(currentFile, (Object) readContents(branch));
             }
         }
@@ -391,11 +392,11 @@ public class Repository implements Serializable {
             System.out.println("Cannot remove the current branch.");
             System.exit(0);
         }
-        restrictedDelete(join(REFS_DIR, branchName));
+        join(REFS_DIR, branchName).delete();
     }
 
     public static void reset(String commitID) {
-        List<String> commitList = plainFilenamesIn(COMMITs);
+        List<String> commitList = plainFilenamesIn(COMMITS);
         String fullID = null;
         for (String id : commitList) {
             if (id.startsWith(commitID)) {
@@ -412,7 +413,8 @@ public class Repository implements Serializable {
             cwdList = new ArrayList<>();
         }
         for (String fileName : cwdList) {
-            if (!isTrackedByHEAD(fileName) && commitMap.containsKey(fileName)) {
+            if (!isTrackedByHEAD(fileName)
+                    && commitMap.containsKey(fileName)) {
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 System.exit(0);
             }
@@ -434,15 +436,10 @@ public class Repository implements Serializable {
     }
 
     public static void merge(String givenBranchName) {
-        /* If there are staged additions or removals present, print the error message
-        You have uncommitted changes. */
         if (!indexIsEmpty() || !indexRmIsEmpty()) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
-
-        /*If a branch with the given name does not exist, print the error message
-        A branch with that name does not exist. */
         if (!isBranchExist(givenBranchName)) {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
@@ -457,31 +454,24 @@ public class Repository implements Serializable {
         HashMap<String, String> givenBranchFileMap = getFileNamesOfBranch(givenBranchName);
         HashMap<String, String> currentBranchFileMap = getFileNamesOfBranch(currentBranchName);
         List<String> cwdList = plainFilenamesIn(CWD);
+        Boolean isConflict = false;
 
-        /*If attempting to merge a branch with itself, print the error message
-        Cannot merge a branch with itself. */
         if (givenBranchName.equals(currentBranchName)) {
             System.out.println("Cannot merge a branch with itself.");
             System.exit(0);
         }
 
-        /*  If the split point is the same commit as the given branch, then we do nothing;*/
         if (splitCommitID.equals(givenCommitID)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
         }
 
-        /* If the split point is the current branch, then the effect is to check out
-        the given branch */
         if (splitCommitID.equals(currentCommitID)) {
             checkout3(givenBranchName);
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
         }
 
-        /* If an untracked file in the current commit would be overwritten or
-        deleted by the merge, print There is an untracked file in the way; delete it,
-         or add and commit it first. and exit*/
         if (cwdList != null) {
             for (String name : cwdList) {
                 if (!isTrackedByHEAD(name) && isInBranch(name, givenBranchName)) {
@@ -492,16 +482,10 @@ public class Repository implements Serializable {
             }
         }
 
-        Boolean isConflict = false;
-
-        /* Any files that have been modified in the given branch since the split point,
-        but not modified in the current branch since the split point should be changed to
-     their versions in the given branch, These files should then all be automatically staged.
-         */
         for (Map.Entry<String, String> entry : givenBranchFileMap.entrySet()) {
             String name = entry.getKey();
             String hash = entry.getValue();
-            String givenContent = readContentsAsString(join(BLOBs, hash));
+            String givenContent = readContentsAsString(join(BLOBS, hash));
             if (isInBranch(name, currentBranchName)
                 && isInCommit(name, splitCommitID)
                 && isModifiedID(name, splitCommitID, givenCommitID)
@@ -509,18 +493,11 @@ public class Repository implements Serializable {
                 checkout2(givenCommitID, name);
                 addToStagingArea(name, hash, INDEX);
             }
-        /* Any files that were not present at the split point and are present
-         only in the given branch should be checked out and staged. */
             if (!isInBranch(name, currentBranchName)
                 && !isInCommit(name, splitCommitID)) {
                 checkout2(givenCommitID, name);
                 addToStagingArea(name, hash, INDEX);
             }
-            /* else in conflict
-            the contents of both are changed and different from other, or the contents of
-            the given are changed and the other file is deleted, or the file was absent at
-            the split point and has different contents in the given and current branches
-             */
             if (isInCommit(name, splitCommitID)) {
                 if (isInBranch(name, currentBranchName)
                     && !currentBranchFileMap.get(name).equals(hash)
@@ -529,13 +506,13 @@ public class Repository implements Serializable {
                     writeConflict(currentContent, givenContent, name);
                     isConflict = true;
                 } else if (!isInBranch(name, currentBranchName)
-                && !getHashInCommitID(name, splitCommitID).equals(hash)) {
+                    && !getHashInCommitID(name, splitCommitID).equals(hash)) {
                     writeConflict("", givenContent, name);
                     isConflict = true;
                 }
             } else {
-                if (isInBranch(name, currentBranchName) &&
-                        !currentBranchFileMap.get(name).equals(hash)) {
+                if (isInBranch(name, currentBranchName)
+                        && !currentBranchFileMap.get(name).equals(hash)) {
                     String currentContent = readContentsAsString(join(CWD, name));
                     writeConflict(currentContent, givenContent, name);
                     isConflict = true;
@@ -543,19 +520,15 @@ public class Repository implements Serializable {
             }
         }
 
-        /* Any files present at the split point, unmodified in the current branch,
-         and absent in the given branch should be removed (and untracked). */
         for (Map.Entry<String, String> entry : currentBranchFileMap.entrySet()) {
             String name = entry.getKey();
             String hash = entry.getValue();
-            String currentContent = readContentsAsString(join(BLOBs, hash));
+            String currentContent = readContentsAsString(join(BLOBS, hash));
             if (isInCommit(name, splitCommitID)
                 && !isModifiedID(name, splitCommitID, currentCommitID)
                 && !isInBranch(name, givenBranchName)) {
                 rm(name);
             }
-            /* else in conflict
-            the contents of current are changed and the other file is deleted */
             if (isInCommit(name, splitCommitID)
                 && !isInBranch(name, givenBranchName)
                 && isModifiedID(name, splitCommitID, currentCommitID)) {
@@ -572,8 +545,8 @@ public class Repository implements Serializable {
 
     private static void writeConflict(String currentContent,
                                       String givenContent, String filename) {
-        String conflict = "<<<<<<< HEAD\n" + currentContent + "=======\n" +
-                givenContent + ">>>>>>>\n";
+        String conflict = "<<<<<<< HEAD\n" + currentContent + "=======\n"
+                + givenContent + ">>>>>>>\n";
         writeContents(join(CWD, filename), conflict);
     }
 
@@ -589,7 +562,7 @@ public class Repository implements Serializable {
         String id = currentBranchID;
         while (id != null && !id.isEmpty()) {
             currentAncestor.add(id);
-            File currentCommitFile = join(COMMITs, id);
+            File currentCommitFile = join(COMMITS, id);
             Commit currentCommit = readObject(currentCommitFile, Commit.class);
             id = currentCommit.getParent1ID();
         }
@@ -598,7 +571,7 @@ public class Repository implements Serializable {
             if (currentAncestor.contains(id)) {
                 return id;
             }
-            File givenCommitFile = join(COMMITs, id);
+            File givenCommitFile = join(COMMITS, id);
             Commit givenCommit = readObject(givenCommitFile, Commit.class);
             id = givenCommit.getParent1ID();
         }

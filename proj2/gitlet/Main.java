@@ -1,6 +1,5 @@
 package gitlet;
 
-import java.io.IOException;
 import static gitlet.Repository.*;
 /** Driver class for Gitlet, a subset of the Git version-control system.
  */
@@ -9,7 +8,7 @@ public class Main {
     /** Usage: java gitlet.Main ARGS, where ARGS contains
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
-    public static void main(String[] args) {
+    static void main(String[] args) {
         if (args.length == 0) {
             throw new RuntimeException("Please enter a command.");
         }
@@ -57,8 +56,16 @@ public class Main {
                 break;
             case "checkout":
                 if (args.length == 3) {
+                    if (!args[1].equals("--")) {
+                        System.out.println("Incorrect operands.");
+                        System.exit(0);
+                    }
                     checkout1(args[2]);
                 } else if (args.length == 4) {
+                    if (!args[2].equals("--")) {
+                        System.out.println("Incorrect operands.");
+                        System.exit(0);
+                    }
                     checkout2(args[1], args[3]);
                 } else if (args.length == 2) {
                     checkout3(args[1]);
