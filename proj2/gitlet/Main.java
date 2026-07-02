@@ -8,7 +8,7 @@ public class Main {
     /** Usage: java gitlet.Main ARGS, where ARGS contains
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
-    static void main(String[] args) {
+    public static void main(String[] args) {
         if (args.length == 0) {
             throw new RuntimeException("Please enter a command.");
         }
