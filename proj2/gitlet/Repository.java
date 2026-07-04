@@ -421,8 +421,8 @@ public class Repository implements Serializable {
         for (String fileName : cwdList) {
             if (!isTrackedByHEAD(fileName)
                     && commitMap.containsKey(fileName)) {
-                System.out.println("There is an untracked file in the way; " +
-                        "delete it, or add and commit it first.");
+                System.out.println("There is an untracked file in the way; "
+                        + "delete it, or add and commit it first.");
                 System.exit(0);
             }
         }
@@ -442,9 +442,7 @@ public class Repository implements Serializable {
         writeContents(getCurrentBranchFile(), fullID);
     }
 
-    private static void mergeFalseCase(String givenBranchName, String currentBranchName,
-                                       String splitCommitID, String givenCommitID,
-                                       String currentCommitID, List<String> cwdList) {
+    private static void mergeFalseCase0(String givenBranchName) {
         if (!indexIsEmpty() || !indexRmIsEmpty()) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
@@ -453,7 +451,11 @@ public class Repository implements Serializable {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
         }
+    }
 
+    private static void mergeFalseCase(String givenBranchName, String currentBranchName,
+                                       String splitCommitID, String givenCommitID,
+                                       String currentCommitID, List<String> cwdList) {
         if (givenBranchName.equals(currentBranchName)) {
             System.out.println("Cannot merge a branch with itself.");
             System.exit(0);
@@ -481,8 +483,8 @@ public class Repository implements Serializable {
         }
 
     }
-
     public static void merge(String givenBranchName) {
+        mergeFalseCase0(givenBranchName);
         String currentBranchName = getCurrentBranchName();
         Commit currentCommit = getCommitByHEAD();
         Commit givenCommit = getCommitOfBranch(givenBranchName);
@@ -506,8 +508,7 @@ public class Repository implements Serializable {
                 checkout2(givenCommitID, name);
                 addToStagingArea(name, hash, INDEX);
             }
-            if (!isInBranch(name, currentBranchName)
-                && !isInCommit(name, splitCommitID)) {
+            if (!isInBranch(name, currentBranchName) && !isInCommit(name, splitCommitID)) {
                 checkout2(givenCommitID, name);
                 addToStagingArea(name, hash, INDEX);
             }
