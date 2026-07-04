@@ -10,7 +10,8 @@ public class Main {
      */
     public static void main(String[] args) {
         if (args.length == 0) {
-            throw new RuntimeException("Please enter a command.");
+            System.out.println("Please enter a command.");
+            System.exit(0);
         }
         String firstArg = args[0];
         switch(firstArg) {
@@ -32,7 +33,7 @@ public class Main {
                     System.out.println("Please enter a commit message.");
                     System.exit(0);
                 }
-                commit(args[1]);
+                commit(args[1], null);
                 break;
             case "rm":
                 valideNumArgs(args, 2);
@@ -52,6 +53,10 @@ public class Main {
                 break;
             case "status":
                 valideNumArgs(args, 1);
+                if (!GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    System.exit(0);
+                }
                 status();
                 break;
             case "checkout":
@@ -90,7 +95,8 @@ public class Main {
                 merge(args[1]);
                 break;
             default:
-                throw new RuntimeException("No command with that name exists.");
+                System.out.println("No command with that name exists.");
+                System.exit(0);
         }
     }
 

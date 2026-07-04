@@ -25,8 +25,8 @@ public class Repository implements Serializable {
     public static void initCommand() {
         /* check whether the directory has been initialized*/
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists " +
-                    "in the current directory.");
+            System.out.println("A Gitlet version-control system already exists "
+                    + "in the current directory.");
             System.exit(0);
         }
 
@@ -92,7 +92,7 @@ public class Repository implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public static void commit(String message) {
+    public static void commit(String message, String parent2ID) {
         //check whether there exists some files to be staged
         if (indexIsEmpty() && indexRmIsEmpty()) {
             System.out.println("No changes added to the commit.");
@@ -115,12 +115,16 @@ public class Repository implements Serializable {
             blobToName.remove(name);
         }
 
-        Commit cmt = new Commit(message, blobToName, parentID);
+        Commit cmt = new Commit(message, blobToName, parentID, parent2ID);
         addCommitToDirCommit(cmt);
 
         // clear up the staging area.
         clearIndex();
         clearIndexRm();
+    }
+
+    public static void mergeCommit() {
+
     }
 
     @SuppressWarnings("unchecked")
@@ -349,8 +353,10 @@ public class Repository implements Serializable {
         }
 
         for (String name : cwdList) {
-            if (!commitFilesOfBranch.containsKey(name) && isTrackedByHEAD(name)) {
-                restrictedDelete(name);
+            if (!commitFilesOfBranch.containsKey(name)) {
+                if (isTrackedByHEAD(name)) {
+                    restrictedDelete(name);
+                }
                 continue;
             }
             File currentFile = join(CWD, name);
@@ -415,7 +421,8 @@ public class Repository implements Serializable {
         for (String fileName : cwdList) {
             if (!isTrackedByHEAD(fileName)
                     && commitMap.containsKey(fileName)) {
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.out.println("There is an untracked file in the way; " +
+                        "delete it, or add and commit it first.");
                 System.exit(0);
             }
         }
@@ -435,7 +442,9 @@ public class Repository implements Serializable {
         writeContents(getCurrentBranchFile(), fullID);
     }
 
-    public static void merge(String givenBranchName) {
+    private static void mergeFalseCase(String givenBranchName, String currentBranchName,
+                                       String splitCommitID, String givenCommitID,
+                                       String currentCommitID, List<String> cwdList) {
         if (!indexIsEmpty() || !indexRmIsEmpty()) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
@@ -444,17 +453,6 @@ public class Repository implements Serializable {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
         }
-
-        String currentBranchName = getCurrentBranchName();
-        Commit currentCommit = getCommitByHEAD();
-        Commit givenCommit = getCommitOfBranch(givenBranchName);
-        String currentCommitID = currentCommit.getID();
-        String givenCommitID = givenCommit.getID();
-        String splitCommitID = findSplitPoint(currentCommitID, givenCommitID);
-        HashMap<String, String> givenBranchFileMap = getFileNamesOfBranch(givenBranchName);
-        HashMap<String, String> currentBranchFileMap = getFileNamesOfBranch(currentBranchName);
-        List<String> cwdList = plainFilenamesIn(CWD);
-        Boolean isConflict = false;
 
         if (givenBranchName.equals(currentBranchName)) {
             System.out.println("Cannot merge a branch with itself.");
@@ -482,6 +480,21 @@ public class Repository implements Serializable {
             }
         }
 
+    }
+
+    public static void merge(String givenBranchName) {
+        String currentBranchName = getCurrentBranchName();
+        Commit currentCommit = getCommitByHEAD();
+        Commit givenCommit = getCommitOfBranch(givenBranchName);
+        String currentCommitID = currentCommit.getID();
+        String givenCommitID = givenCommit.getID();
+        String splitCommitID = findSplitPoint(currentCommitID, givenCommitID);
+        HashMap<String, String> givenBranchFileMap = getFileNamesOfBranch(givenBranchName);
+        HashMap<String, String> currentBranchFileMap = getFileNamesOfBranch(currentBranchName);
+        List<String> cwdList = plainFilenamesIn(CWD);
+        Boolean isConflict = false;
+        mergeFalseCase(givenBranchName, currentBranchName, splitCommitID, givenCommitID,
+                currentCommitID, cwdList);
         for (Map.Entry<String, String> entry : givenBranchFileMap.entrySet()) {
             String name = entry.getKey();
             String hash = entry.getValue();
@@ -501,13 +514,18 @@ public class Repository implements Serializable {
             if (isInCommit(name, splitCommitID)) {
                 if (isInBranch(name, currentBranchName)
                     && !currentBranchFileMap.get(name).equals(hash)
+                    && isModifiedID(name, splitCommitID, givenCommitID)
                     && isModifiedID(name, splitCommitID, currentCommitID)) {
                     String currentContent = readContentsAsString(join(CWD, name));
                     writeConflict(currentContent, givenContent, name);
+                    String theHash = sha1((Object) readContents(join(CWD, name)));
+                    addToStagingArea(name, theHash, INDEX);
                     isConflict = true;
                 } else if (!isInBranch(name, currentBranchName)
                     && !getHashInCommitID(name, splitCommitID).equals(hash)) {
                     writeConflict("", givenContent, name);
+                    String theHash = sha1((Object) readContents(join(CWD, name)));
+                    addToStagingArea(name, theHash, INDEX);
                     isConflict = true;
                 }
             } else {
@@ -515,11 +533,12 @@ public class Repository implements Serializable {
                         && !currentBranchFileMap.get(name).equals(hash)) {
                     String currentContent = readContentsAsString(join(CWD, name));
                     writeConflict(currentContent, givenContent, name);
+                    String theHash = sha1((Object) readContents(join(CWD, name)));
+                    addToStagingArea(name, theHash, INDEX);
                     isConflict = true;
                 }
             }
         }
-
         for (Map.Entry<String, String> entry : currentBranchFileMap.entrySet()) {
             String name = entry.getKey();
             String hash = entry.getValue();
@@ -533,11 +552,12 @@ public class Repository implements Serializable {
                 && !isInBranch(name, givenBranchName)
                 && isModifiedID(name, splitCommitID, currentCommitID)) {
                 writeConflict(currentContent, "", name);
+                String theHash = sha1((Object) readContents(join(CWD, name)));
+                addToStagingArea(name, theHash, INDEX);
                 isConflict = true;
             }
         }
-
-        commit("Merged " + givenBranchName + " into " + currentBranchName + ".");
+        commit("Merged " + givenBranchName + " into " + currentBranchName + ".", givenCommitID);
         if (isConflict) {
             System.out.println("Encountered a merge conflict.");
         }
@@ -559,21 +579,38 @@ public class Repository implements Serializable {
 
     private static String findSplitPoint(String currentBranchID, String givenBranchID) {
         Set<String> currentAncestor = new HashSet<>();
-        String id = currentBranchID;
-        while (id != null && !id.isEmpty()) {
+        Queue<String> queue = new LinkedList<>();
+        queue.add(currentBranchID);
+        while (!queue.isEmpty()) {
+            String id = queue.poll();
+            if (id == null || id.isEmpty()) {
+                continue;
+            }
             currentAncestor.add(id);
-            File currentCommitFile = join(COMMITS, id);
-            Commit currentCommit = readObject(currentCommitFile, Commit.class);
-            id = currentCommit.getParent1ID();
+            Commit commit = readObject(join(COMMITS, id), Commit.class);
+            if (commit.getParent1ID() != null) {
+                queue.add(commit.getParent1ID());
+            }
+            if (commit.getParent2ID() != null) {
+                queue.add(commit.getParent2ID());
+            }
         }
-        id = givenBranchID;
-        while (id != null && !id.isEmpty()) {
+        queue.add(givenBranchID);
+        while (!queue.isEmpty()) {
+            String id = queue.poll();
+            if (id == null || id.isEmpty()) {
+                continue;
+            }
             if (currentAncestor.contains(id)) {
                 return id;
             }
-            File givenCommitFile = join(COMMITS, id);
-            Commit givenCommit = readObject(givenCommitFile, Commit.class);
-            id = givenCommit.getParent1ID();
+            Commit commit = readObject(join(COMMITS, id), Commit.class);
+            if (commit.getParent1ID() != null) {
+                queue.add(commit.getParent1ID());
+            }
+            if (commit.getParent2ID() != null) {
+                queue.add(commit.getParent2ID());
+            }
         }
         return null;
     }
